@@ -5256,7 +5256,256 @@ components:
         Assert.NotNull(responseProperty);
         Assert.Equal("some path item description", responseProperty.Documentation.DescriptionTemplate);
     }
+    [Theory]
+    [InlineData(true, AccessModifier.Private)]
+    [InlineData(true, AccessModifier.Public)]
+    [InlineData(true, AccessModifier.Protected)]
+    [InlineData(true, AccessModifier.Internal)]
+    [InlineData(false, AccessModifier.Public)]
+    public void AccessModifierShouldBeConfigurableForApiClientClassNodes(bool applyAccessModifierToConfig, AccessModifier expectedAccessModifier)
+    {
+        var config = new GenerationConfiguration();
+        if (applyAccessModifierToConfig)
+        {
+            config.ApiClientAccessModifier = expectedAccessModifier;
+        }
 
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var document = new OpenApiDocument();
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var clientNamespace = codeModel.FindNamespaceByName(config.ClientNamespaceName);
+        Assert.NotNull(clientNamespace);
+
+        var foundClass = clientNamespace.FindChildByName<CodeClass>(config.ClientClassName, false);
+        Assert.NotNull(foundClass);
+        Assert.Equal(expectedAccessModifier, foundClass.Access);
+    }
+    [Theory]
+    [InlineData(true, AccessModifier.Private)]
+    [InlineData(true, AccessModifier.Public)]
+    [InlineData(true, AccessModifier.Protected)]
+    [InlineData(true, AccessModifier.Internal)]
+    [InlineData(false, AccessModifier.Public)]
+    public void AccessModifierShouldBeConfigurableForRequestBuilderClassNodes(bool applyAccessModifierToConfig, AccessModifier expectedAccessModifier)
+    {
+        var config = new GenerationConfiguration();
+        if (applyAccessModifierToConfig)
+        {
+            config.RequestBuilderAccessModifier = expectedAccessModifier;
+        }
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var document = AccessModifierOpenApiDocumentSample();
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var pathNamespace = codeModel.FindNamespaceByName($"{config.ClientNamespaceName}.SamplePath");
+        Assert.NotNull(pathNamespace);
+
+        var foundCodeClass = pathNamespace.FindChildByName<CodeClass>("SamplePathRequestBuilder", false);
+        Assert.NotNull(foundCodeClass);
+        Assert.Equal(expectedAccessModifier, foundCodeClass.Access);
+    }
+    [Theory]
+    [InlineData(true, AccessModifier.Private)]
+    [InlineData(true, AccessModifier.Public)]
+    [InlineData(true, AccessModifier.Protected)]
+    [InlineData(true, AccessModifier.Internal)]
+    [InlineData(false, AccessModifier.Public)]
+    public void AccessModifierShouldBeConfigurableForRequestConfigurationClassNodes(bool applyAccessModifierToConfig, AccessModifier expectedAccessModifier)
+    {
+        var config = new GenerationConfiguration();
+        if (applyAccessModifierToConfig)
+        {
+            config.RequestBuilderAccessModifier = expectedAccessModifier;
+        }
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var document = AccessModifierOpenApiDocumentSample();
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var pathNamespace = codeModel.FindNamespaceByName($"{config.ClientNamespaceName}.SamplePath");
+        Assert.NotNull(pathNamespace);
+
+        var foundCodeClass = pathNamespace.FindChildByName<CodeClass>("SamplePathRequestBuilder", false);
+        Assert.NotNull(foundCodeClass);
+
+        var foundChildCodeClass = foundCodeClass.FindChildByName<CodeClass>("SamplePathRequestBuilderGetRequestConfiguration");
+        Assert.Equal(expectedAccessModifier, foundChildCodeClass.Access);
+    }
+    [Theory]
+    [InlineData(true, AccessModifier.Private)]
+    [InlineData(true, AccessModifier.Public)]
+    [InlineData(true, AccessModifier.Protected)]
+    [InlineData(true, AccessModifier.Internal)]
+    [InlineData(false, AccessModifier.Public)]
+    public void AccessModifierShouldBeConfigurableForQueryParameterClassNodes(bool applyAccessModifierToConfig, AccessModifier expectedAccessModifier)
+    {
+        var config = new GenerationConfiguration();
+        if (applyAccessModifierToConfig)
+        {
+            config.RequestBuilderAccessModifier = expectedAccessModifier;
+        }
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var document = AccessModifierOpenApiDocumentSample();
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var pathNamespace = codeModel.FindNamespaceByName($"{config.ClientNamespaceName}.SamplePath");
+        Assert.NotNull(pathNamespace);
+
+        var foundCodeClass = pathNamespace.FindChildByName<CodeClass>("SamplePathRequestBuilder", false);
+        Assert.NotNull(foundCodeClass);
+
+        var foundChildCodeClass = foundCodeClass.FindChildByName<CodeClass>("SamplePathRequestBuilderGetQueryParameters");
+        Assert.Equal(expectedAccessModifier, foundChildCodeClass.Access);
+    }
+    [Theory]
+    [InlineData(true, AccessModifier.Private)]
+    [InlineData(true, AccessModifier.Public)]
+    [InlineData(true, AccessModifier.Protected)]
+    [InlineData(true, AccessModifier.Internal)]
+    [InlineData(false, AccessModifier.Public)]
+    public void AccessModifierShouldBeConfigurableForModelClassNodes(bool applyAccessModifierToConfig, AccessModifier expectedAccessModifier)
+    {
+        var config = new GenerationConfiguration();
+        if (applyAccessModifierToConfig)
+        {
+            config.ModelsAccessModifier = expectedAccessModifier;
+        }
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var document = AccessModifierOpenApiDocumentSample();
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var modelsNamespaceNode = codeModel.FindNamespaceByName(config.ModelsNamespaceName);
+        Assert.NotNull(modelsNamespaceNode);
+
+        var foundCodeClass = modelsNamespaceNode.FindChildByName<CodeClass>("ExampleSchema", false);
+        Assert.NotNull(foundCodeClass);
+        Assert.Equal(expectedAccessModifier, foundCodeClass.Access);
+    }
+    [Theory]
+    [InlineData(true, AccessModifier.Private)]
+    [InlineData(true, AccessModifier.Public)]
+    [InlineData(true, AccessModifier.Protected)]
+    [InlineData(true, AccessModifier.Internal)]
+    [InlineData(false, AccessModifier.Public)]
+    public void AccessModifierShouldBeConfigurableForModelEnumNodes(bool applyAccessModifierToConfig, AccessModifier expectedAccessModifier)
+    {
+        var config = new GenerationConfiguration();
+        if (applyAccessModifierToConfig)
+        {
+            config.ModelsAccessModifier = expectedAccessModifier;
+        }
+
+        var mockLogger = new Mock<ILogger<KiotaBuilder>>();
+        var builder = new KiotaBuilder(mockLogger.Object, config, _httpClient);
+        var document = AccessModifierOpenApiDocumentSample();
+        var node = builder.CreateUriSpace(document);
+        var codeModel = builder.CreateSourceModel(node);
+
+        var modelsNamespaceNode = codeModel.FindNamespaceByName(config.ModelsNamespaceName);
+        Assert.NotNull(modelsNamespaceNode);
+
+        var foundCodeEnum = modelsNamespaceNode.FindChildByName<CodeEnum>("ExampleSchema_choices", false);
+        Assert.NotNull(foundCodeEnum);
+        Assert.Equal(expectedAccessModifier, foundCodeEnum.Access);
+    }
+    private OpenApiDocument AccessModifierOpenApiDocumentSample()
+    {
+        var exampleSchema = new OpenApiSchema
+        {
+            Type = "object",
+            Properties = new Dictionary<string, OpenApiSchema>
+            {
+                {
+                    "choices", new OpenApiSchema
+                    {
+                        Type = "string",
+                        Enum = new List<IOpenApiAny>
+                        {
+                            new OpenApiString("choice1"),
+                            new OpenApiString("choice2"),
+                        }
+                    }
+                }
+            },
+            Reference = new OpenApiReference
+            {
+                Id = "ExampleSchema",
+                Type = ReferenceType.Schema
+            },
+            UnresolvedReference = false
+        };
+        return new OpenApiDocument
+        {
+            Components = new OpenApiComponents
+            {
+                Schemas =
+                {
+                    ["ExampleSchema"] = exampleSchema
+                }
+            },
+            Paths = new OpenApiPaths
+            {
+                ["SamplePath"] = new OpenApiPathItem
+                {
+                    Operations = {
+                        [OperationType.Get] = new OpenApiOperation
+                        {
+                            Parameters = new List<OpenApiParameter>()
+                            {
+                                new OpenApiParameter
+                                {
+                                    Name = "TestQueryParameter",
+                                    In = ParameterLocation.Query,
+                                    Schema = new OpenApiSchema {
+                                        Type = "string",
+                                    }
+                                }
+                            },
+                            Responses = new OpenApiResponses
+                            {
+                                ["200"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = new OpenApiSchema {
+                                                Properties = new Dictionary<string, OpenApiSchema> {
+                                                    {
+                                                        "name", new OpenApiSchema {
+                                                            Type = "string"
+                                                        }
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                },
+                                ["500"] = new OpenApiResponse {
+                                    Content = {
+                                        ["application/json"] = new OpenApiMediaType {
+                                            Schema = exampleSchema,
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
+                }
+            }
+        };
+    }
     [Fact]
     public void Considers200WithSchemaOver2XXWithSchema()
     {

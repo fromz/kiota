@@ -258,6 +258,7 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
                 {
                     DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
                 },
+                Access = currentClass.Access,
             });
         CrawlTree(current, x => AddConstructorsForDefaultValues(x, addIfInherited, forceAdd, classKindsToExclude));
     }
@@ -1423,8 +1424,8 @@ public abstract class CommonLanguageRefiner : ILanguageRefiner
             foreach (var property in properties)
             {
                 property.ExistsInExternalBaseType = true;
-                if (accessModifier.HasValue)
-                    property.Access = accessModifier.Value;
+                // if (accessModifier.HasValue)
+                //     property.Access = accessModifier.Value;
             }
         }
 

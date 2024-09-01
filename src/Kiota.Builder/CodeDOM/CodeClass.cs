@@ -206,6 +206,7 @@ public class CodeClass : ProprietableBlock<CodeClassKind, ClassDeclaration>, ITy
         return AddRange(codeInterfaces);
     }
     public CodeClass? BaseClass => StartBlock.Inherits?.TypeDefinition as CodeClass;
+    public AccessModifier Access { get; set; } = AccessModifier.Public;
     /// <summary>
     /// The interface associated with this class, if any.
     /// </summary>

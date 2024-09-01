@@ -41,4 +41,5 @@ public class CodeEnum : CodeBlock<BlockDeclaration, BlockEnd>, IDocumentedElemen
     {
         get; set;
     }
+    public AccessModifier Access { get; set; } = AccessModifier.Public;
 }

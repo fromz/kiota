@@ -4,6 +4,7 @@ using System.Text.RegularExpressions;
 using kiota.Handlers;
 using kiota.Rpc;
 using Kiota.Builder;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Configuration;
 using Kiota.Builder.Validation;
 using Microsoft.Extensions.Logging;
@@ -349,6 +350,12 @@ public static partial class KiotaHost
         AddEnumValidator(languageOption, "language");
         return languageOption;
     }
+    internal static Option<AccessModifier> GetAccessModifierOption(string argumentHelpName, string type, AccessModifier defaultAccessModifier)
+    {
+        var accessModifierOption = new Option<AccessModifier>($"--{argumentHelpName}", () => defaultAccessModifier, $"The access modifier option for the generated {type}.");
+        AddEnumValidator(accessModifierOption, argumentHelpName);
+        return accessModifierOption;
+    }
     internal static Option<string> GetNamespaceOption(string defaultNamespaceName)
     {
         var namespaceOption = new Option<string>("--namespace-name", () => defaultNamespaceName, "The namespace to use for the core client class specified with the --class-name option.");
@@ -419,6 +426,12 @@ public static partial class KiotaHost
 
         var namespaceOption = GetNamespaceOption(defaultConfiguration.ClientNamespaceName);
 
+        var apiClientAccessModifierOption = GetAccessModifierOption("api-client-accessibility-modifier", "ApiClient", defaultConfiguration.ApiClientAccessModifier);
+
+        var requestBuilderAccessModifierOption = GetAccessModifierOption("request-builder-accessibility-modifier", "RequestBuilder", defaultConfiguration.RequestBuilderAccessModifier);
+
+        var modelsAccessModifierOption = GetAccessModifierOption("models-accessibility-modifier", "Model", defaultConfiguration.ModelsAccessModifier);
+
         var logLevelOption = GetLogLevelOption();
 
         var backingStoreOption = GetBackingStoreOption(defaultConfiguration.UsesBackingStore);
@@ -460,6 +473,9 @@ public static partial class KiotaHost
             languageOption,
             classOption,
             namespaceOption,
+            apiClientAccessModifierOption,
+            requestBuilderAccessModifierOption,
+            modelsAccessModifierOption,
             logLevelOption,
             backingStoreOption,
             excludeBackwardCompatible,
@@ -482,6 +498,9 @@ public static partial class KiotaHost
             LanguageOption = languageOption,
             ClassOption = classOption,
             NamespaceOption = namespaceOption,
+            ApiClientAccessModifierOption = apiClientAccessModifierOption,
+            RequestBuilderAccessModifierOption = requestBuilderAccessModifierOption,
+            ModelsAccessModifierOption = modelsAccessModifierOption,
             LogLevelOption = logLevelOption,
             BackingStoreOption = backingStoreOption,
             ExcludeBackwardCompatibleOption = excludeBackwardCompatible,
