@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.Json.Nodes;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 using Kiota.Builder.Lock;
 using Microsoft.OpenApi.ApiManifest;
@@ -39,6 +40,9 @@ public class GenerationConfiguration : ICloneable
     public string OutputPath { get; set; } = "./output";
     public string ClientClassName { get; set; } = "ApiClient";
     public string ClientNamespaceName { get; set; } = "ApiSdk";
+    public AccessModifier ApiClientAccessModifier { get; set; } = AccessModifier.Public;
+    public AccessModifier RequestBuilderAccessModifier { get; set; } = AccessModifier.Public;
+    public AccessModifier ModelsAccessModifier { get; set; } = AccessModifier.Public;
     public string NamespaceNameSeparator { get; set; } = ".";
     public bool ExportPublicApi
     {

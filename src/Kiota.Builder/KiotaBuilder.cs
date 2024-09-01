@@ -611,6 +611,7 @@ public partial class KiotaBuilder
                 {
                     DescriptionTemplate = "The main entry point of the SDK, exposes the configuration and the fluent API."
                 },
+                Access = config.ApiClientAccessModifier,
             }).First();
         else
         {
@@ -624,6 +625,7 @@ public partial class KiotaBuilder
                 {
                     DescriptionTemplate = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
                 },
+                Access = config.RequestBuilderAccessModifier,
             }).First();
         }
 
@@ -645,7 +647,7 @@ public partial class KiotaBuilder
             else
             {
                 var description = child.Value.GetPathItemDescription(Constants.DefaultOpenApiLabel).CleanupDescription();
-                var prop = CreateProperty(propIdentifier, propType, kind: CodePropertyKind.RequestBuilder); // we should add the type definition here but we can't as it might not have been generated yet
+                var prop = CreateProperty(propIdentifier, propType, kind: CodePropertyKind.RequestBuilder, encapsulatingAccessModifier: codeClass.Access); // we should add the type definition here but we can't as it might not have been generated yet
                 if (prop is null)
                 {
                     logger.LogWarning("Property {Prop} was not created as its type couldn't be determined", propIdentifier);
@@ -693,7 +695,7 @@ public partial class KiotaBuilder
             {
                 DescriptionTemplate = "Returns a request builder with the provided arbitrary URL. Using this method means any other path or query parameters are ignored.",
             },
-            Access = AccessModifier.Public,
+            Access = currentClass.Access,
             IsAsync = false,
             IsStatic = false,
             ReturnType = new CodeType
@@ -728,7 +730,7 @@ public partial class KiotaBuilder
             {
                 DescriptionTemplate = currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel, $"Builds and executes requests for operations under {currentNode.Path}"),
             },
-            Access = AccessModifier.Public,
+            Access = codeClass.Access,
             IsAsync = false,
             IsStatic = false,
             Parent = codeClass,
@@ -831,7 +833,7 @@ public partial class KiotaBuilder
             {
                 DescriptionTemplate = "Instantiates a new {TypeName} and sets the default values.",
             },
-            Access = AccessModifier.Public,
+            Access = currentClass.Access,
             ReturnType = new CodeType { Name = VoidType, IsExternal = true },
             Parent = currentClass,
         };
@@ -843,7 +845,7 @@ public partial class KiotaBuilder
                 DescriptionTemplate = "Path parameters for the request",
             },
             Kind = CodePropertyKind.PathParameters,
-            Access = AccessModifier.Private,
+            Access = currentClass.Access,
             ReadOnly = true,
             Type = new CodeType
             {
@@ -1077,7 +1079,7 @@ public partial class KiotaBuilder
     }
     private static readonly StructuralPropertiesReservedNameProvider structuralPropertiesReservedNameProvider = new();
 
-    private CodeProperty? CreateProperty(string childIdentifier, string childType, OpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom)
+    private CodeProperty? CreateProperty(string childIdentifier, string childType, OpenApiSchema? propertySchema = null, CodeTypeBase? existingType = null, CodePropertyKind kind = CodePropertyKind.Custom, AccessModifier encapsulatingAccessModifier = AccessModifier.Public)
     {
         var propertyName = childIdentifier.CleanupSymbolName();
         if (structuralPropertiesReservedNameProvider.ReservedNames.Contains(propertyName))
@@ -1088,6 +1090,7 @@ public partial class KiotaBuilder
         {
             Name = propertyName,
             Kind = kind,
+            Access = encapsulatingAccessModifier,
             Documentation = new()
             {
                 DescriptionTemplate = propertySchema?.Description.CleanupDescription() is string description && !string.IsNullOrEmpty(description) ?
@@ -1230,7 +1233,8 @@ public partial class KiotaBuilder
                         Kind = CodeClassKind.Model,
                         Name = obsoleteTypeName,
                         Deprecation = new("This class is obsolete. Use {TypeName} instead.", IsDeprecated: true, TypeReferences: new() { { "TypeName", codeType } }),
-                        Documentation = (CodeDocumentation)codeClass.Documentation.Clone()
+                        Documentation = (CodeDocumentation)codeClass.Documentation.Clone(),
+                        Access = codeClass.Access,
                     };
                     var originalFactoryMethod = codeClass.Methods.First(static x => x.Kind is CodeMethodKind.Factory);
                     var obsoleteFactoryMethod = (CodeMethod)originalFactoryMethod.Clone();
@@ -1298,6 +1302,7 @@ public partial class KiotaBuilder
                 {
                     DescriptionTemplate = "Configuration for the request such as headers, query parameters, and middleware options.",
                 },
+                Access = config.RequestBuilderAccessModifier,
             }).First();
 
             var schema = operation.GetResponseSchema(config.StructuredMimeTypes);
@@ -1308,6 +1313,7 @@ public partial class KiotaBuilder
             {
                 Name = operationType.ToString(),
                 Kind = CodeMethodKind.RequestExecutor,
+                Access = parentClass.Access,
                 HttpMethod = method,
                 Parent = parentClass,
                 Documentation = new()
@@ -1367,6 +1373,7 @@ public partial class KiotaBuilder
             {
                 Name = $"To{operationType.ToString().ToFirstCharacterUpperCase()}RequestInformation",
                 Kind = CodeMethodKind.RequestGenerator,
+                Access = parentClass.Access,
                 IsAsync = false,
                 HttpMethod = method,
                 Documentation = new()
@@ -1455,6 +1462,7 @@ public partial class KiotaBuilder
             {
                 Name = "queryParameters",
                 Kind = CodePropertyKind.QueryParameters,
+                Access = parameterClass.Access,
                 Documentation = new()
                 {
                     DescriptionTemplate = "Request query parameters",
@@ -1849,7 +1857,7 @@ public partial class KiotaBuilder
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeElement existingDeclaration) // we can find it in the components
         {
-            if (AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace) is CodeEnum enumDeclaration)
+            if (AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace, config) is CodeEnum enumDeclaration)
                 return enumDeclaration;
 
             if (schema.IsIntersection() && schema.MergeIntersectionSchemaEntries() is { } mergedSchema &&
@@ -1862,15 +1870,15 @@ public partial class KiotaBuilder
         }
         return existingDeclaration;
     }
-    private CodeEnum? AddEnumDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace)
+    private CodeEnum? AddEnumDeclarationIfDoesntExist(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, GenerationConfiguration config)
     {
         if (GetExistingDeclaration(currentNamespace, currentNode, declarationName) is not CodeEnum existingDeclaration) // we can find it in the components
         {
-            return AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace);
+            return AddEnumDeclaration(currentNode, schema, declarationName, currentNamespace, config);
         }
         return existingDeclaration;
     }
-    private static CodeEnum? AddEnumDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace)
+    private static CodeEnum? AddEnumDeclaration(OpenApiUrlTreeNode currentNode, OpenApiSchema schema, string declarationName, CodeNamespace currentNamespace, GenerationConfiguration config)
     {
         if (schema.IsEnum())
         {
@@ -1892,6 +1900,7 @@ public partial class KiotaBuilder
                                         currentNode.GetPathItemDescription(Constants.DefaultOpenApiLabel),
                 },
                 Deprecation = schema.GetDeprecationInformation(),
+                Access = config.ModelsAccessModifier,
             };
             SetEnumOptions(schema, newEnum);
             return currentNamespace.AddEnum(newEnum).First();
@@ -1953,6 +1962,7 @@ public partial class KiotaBuilder
                 DescriptionTemplate = (string.IsNullOrEmpty(schema.Description) ? schema.AllOf?.FirstOrDefault(static x => !x.IsReferencedSchema() && !string.IsNullOrEmpty(x.Description))?.Description : schema.Description).CleanupDescription(),
             },
             Deprecation = schema.GetDeprecationInformation(),
+            Access = config.ModelsAccessModifier,
         };
         if (inheritsFrom != null)
             newClassStub.StartBlock.Inherits = new CodeType { TypeDefinition = inheritsFrom };
@@ -2158,6 +2168,7 @@ public partial class KiotaBuilder
             IsStatic = true,
             IsAsync = false,
             Parent = newClass,
+            Access = newClass.Access,
         };
         discriminatorMappings?.ToList()
                 .ForEach(x => newClass.DiscriminatorInformation.AddDiscriminatorMapping(x.Key, x.Value));
@@ -2213,7 +2224,7 @@ public partial class KiotaBuilder
                         logger.LogWarning("Omitted property {PropertyName} for model {ModelName} in API path {ApiPath}, the schema is invalid.", x.Key, model.Name, currentNode.Path);
                         return null;
                     }
-                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition);
+                    return CreateProperty(x.Key, definition.Name, propertySchema: propertySchema, existingType: definition, encapsulatingAccessModifier: model.Access);
                 })
                 .OfType<CodeProperty>()
                 .ToArray();
@@ -2238,7 +2249,7 @@ public partial class KiotaBuilder
             {
                 Name = refineMethodName(FieldDeserializersMethodName),
                 Kind = CodeMethodKind.Deserializer,
-                Access = AccessModifier.Public,
+                Access = model.Access,
                 Documentation = new()
                 {
                     DescriptionTemplate = "The deserialization information for the current model",
@@ -2267,6 +2278,7 @@ public partial class KiotaBuilder
                 },
                 ReturnType = new CodeType { Name = VoidType, IsNullable = false, IsExternal = true },
                 Parent = model,
+                Access = model.Access,
             };
             var parameter = new CodeParameter
             {
@@ -2290,7 +2302,7 @@ public partial class KiotaBuilder
             var additionalDataProp = new CodeProperty
             {
                 Name = AdditionalDataPropName,
-                Access = AccessModifier.Public,
+                Access = model.Access,
                 DefaultValue = "new Dictionary<string, object>()",
                 Kind = CodePropertyKind.AdditionalData,
                 Documentation = new()
@@ -2318,7 +2330,7 @@ public partial class KiotaBuilder
             var backingStoreProperty = new CodeProperty
             {
                 Name = BackingStorePropertyName,
-                Access = AccessModifier.Public,
+                Access = model.Access,
                 DefaultValue = "BackingStoreFactorySingleton.Instance.CreateBackingStore()",
                 Kind = CodePropertyKind.BackingStore,
                 Documentation = new()
@@ -2356,6 +2368,7 @@ public partial class KiotaBuilder
                                     description :
                                     operation.Summary).CleanupDescription(),
                 },
+                Access = parentClass.Access,
             }).First();
             foreach (var parameter in parameters)
                 AddPropertyForQueryParameter(node, operationType, parameter, parameterClass);
@@ -2382,7 +2395,7 @@ public partial class KiotaBuilder
             var enumName = enumSchema.GetSchemaName().CleanupSymbolName();
             if (string.IsNullOrEmpty(enumName))
                 enumName = $"{operationType.ToString().ToFirstCharacterUpperCase()}{parameter.Name.CleanupSymbolName().ToFirstCharacterUpperCase()}QueryParameterType";
-            if (AddEnumDeclarationIfDoesntExist(node, enumSchema, enumName, shortestNamespace) is { } enumDeclaration)
+            if (AddEnumDeclarationIfDoesntExist(node, enumSchema, enumName, shortestNamespace, config) is { } enumDeclaration)
             {
                 resultType = new CodeType
                 {
@@ -2410,6 +2423,7 @@ public partial class KiotaBuilder
             Kind = CodePropertyKind.QueryParameter,
             Type = resultType,
             Deprecation = parameter.GetDeprecationInformation(),
+            Access = config.RequestBuilderAccessModifier,
         };
 
         if (!parameter.Name.Equals(prop.Name, StringComparison.OrdinalIgnoreCase))

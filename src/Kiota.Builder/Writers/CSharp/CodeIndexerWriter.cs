@@ -16,7 +16,7 @@ public class CodeIndexerWriter : BaseElementWriter<CodeIndexer, CSharpConvention
         conventions.WriteShortDescription(codeElement.IndexParameter, writer, $"<param name=\"position\">", "</param>");
         conventions.WriteAdditionalDescriptionItem($"<returns>A {conventions.GetTypeStringForDocumentation(codeElement.ReturnType, codeElement)}</returns>", writer);
         conventions.WriteDeprecationAttribute(codeElement, writer);
-        writer.WriteLine($"public {returnType} this[{conventions.GetTypeString(codeElement.IndexParameter.Type, codeElement)} position]");
+        writer.WriteLine($"{conventions.GetAccessModifier(parentClass.Access)} {returnType} this[{conventions.GetTypeString(codeElement.IndexParameter.Type, codeElement)} position]");
         writer.StartBlock();
         writer.WriteLine("get");
         writer.StartBlock();

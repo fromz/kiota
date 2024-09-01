@@ -3,6 +3,7 @@ using System.CommandLine.Invocation;
 using System.Text.Json;
 
 using Kiota.Builder;
+using Kiota.Builder.CodeDOM;
 using Kiota.Builder.Extensions;
 
 using Microsoft.Extensions.Logging;
@@ -28,6 +29,18 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         get; init;
     }
     public required Option<string> NamespaceOption
+    {
+        get; init;
+    }
+    public required Option<AccessModifier> ApiClientAccessModifierOption
+    {
+        get; init;
+    }
+    public required Option<AccessModifier> RequestBuilderAccessModifierOption
+    {
+        get; init;
+    }
+    public required Option<AccessModifier> ModelsAccessModifierOption
     {
         get; init;
     }
@@ -73,6 +86,9 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         bool includeAdditionalData = context.ParseResult.GetValueForOption(AdditionalDataOption);
         string className = context.ParseResult.GetValueForOption(ClassOption) ?? string.Empty;
         string namespaceName = context.ParseResult.GetValueForOption(NamespaceOption) ?? string.Empty;
+        AccessModifier apiClientAccessModifier = context.ParseResult.GetValueForOption(ApiClientAccessModifierOption);
+        AccessModifier requestBuilderAccessModifier = context.ParseResult.GetValueForOption(RequestBuilderAccessModifierOption);
+        AccessModifier modelsAccessModifier = context.ParseResult.GetValueForOption(ModelsAccessModifierOption);
         List<string> serializer = context.ParseResult.GetValueForOption(SerializerOption) ?? [];
         List<string> deserializer = context.ParseResult.GetValueForOption(DeserializerOption) ?? [];
         List<string> includePatterns = context.ParseResult.GetValueForOption(IncludePatternsOption) ?? [];
@@ -86,6 +102,9 @@ internal class KiotaGenerateCommandHandler : BaseKiotaCommandHandler
         AssignIfNotNullOrEmpty(manifest, (c, s) => c.ApiManifestPath = s);
         AssignIfNotNullOrEmpty(className, (c, s) => c.ClientClassName = s);
         AssignIfNotNullOrEmpty(namespaceName, (c, s) => c.ClientNamespaceName = s);
+        Configuration.Generation.ApiClientAccessModifier = apiClientAccessModifier;
+        Configuration.Generation.RequestBuilderAccessModifier = requestBuilderAccessModifier;
+        Configuration.Generation.ModelsAccessModifier = modelsAccessModifier;
         Configuration.Generation.UsesBackingStore = backingStore;
         Configuration.Generation.ExcludeBackwardCompatible = excludeBackwardCompatible;
         Configuration.Generation.IncludeAdditionalData = includeAdditionalData;

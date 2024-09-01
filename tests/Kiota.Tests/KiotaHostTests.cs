@@ -58,6 +58,21 @@ public sealed class KiotaHostTests : IDisposable
         Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-c", ".Graph"], _console));
     }
     [Fact]
+    public async Task ThrowsOnInvalidApiClientAccessibilityModifierAsync()
+    {
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "--api-client-accessibility-modifier", "InvalidAccessModifier"], _console));
+    }
+    [Fact]
+    public async Task ThrowsOnInvalidRequestBuilderAccessibilityModifierAsync()
+    {
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "--request-builder-accessibility-modifier", "InvalidAccessModifier"], _console));
+    }
+    [Fact]
+    public async Task ThrowsOnInvalidModlesAccessibilityModifierAsync()
+    {
+        Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "-=models-accessibility-modifier", "InvalidAccessModifier"], _console));
+    }
+    [Fact]
     public async Task AcceptsDeserializersAsync()
     {
         Assert.Equal(1, await KiotaHost.GetRootCommand().InvokeAsync(["generate", "--ds", "Kiota.Tests.TestData.TestDeserializer"], _console));
